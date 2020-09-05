@@ -29,7 +29,7 @@ contract Issuer is Owned, MixinResolver, MixinSystemSettings, IIssuer {
     using SafeMath for uint;
     using SafeDecimalMath for uint;
 
-    bytes32 private constant sUSD = "sUSD";
+    bytes32 private constant sUSD = "oUSD";
     bytes32 public constant CONTRACT_NAME = "Issuer";
     bytes32 public constant LAST_ISSUE_EVENT = "LAST_ISSUE_EVENT";
 
@@ -129,7 +129,7 @@ contract Issuer is Owned, MixinResolver, MixinSystemSettings, IIssuer {
         }
 
         if (withSNX) {
-            currencyKeys[availableSynths.length] = "SNX";
+            currencyKeys[availableSynths.length] = "wrenBTC";
         }
 
         return currencyKeys;
@@ -167,7 +167,7 @@ contract Issuer is Owned, MixinResolver, MixinSystemSettings, IIssuer {
             total = total.add(synthValue);
         }
 
-        if (currencyKey == "SNX") {
+        if (currencyKey == "wrenBTC") {
             // if no rate while iterating through synths, then try SNX
             currencyRate = rates[synthsAndSNX.length - 1];
         } else if (currencyRate == 0) {
@@ -249,7 +249,7 @@ contract Issuer is Owned, MixinResolver, MixinSystemSettings, IIssuer {
 
     function _maxIssuableSynths(address _issuer) internal view returns (uint) {
         // What is the value of their SNX balance in sUSD
-        uint destinationValue = exchangeRates().effectiveValue("SNX", _collateral(_issuer), sUSD);
+        uint destinationValue = exchangeRates().effectiveValue("wrenBTC", _collateral(_issuer), sUSD);
 
         // They're allowed to issue up to issuanceRatio of that value
         return destinationValue.multiplyDecimal(getIssuanceRatio());
@@ -258,7 +258,7 @@ contract Issuer is Owned, MixinResolver, MixinSystemSettings, IIssuer {
     function _collateralisationRatio(address _issuer) internal view returns (uint, bool) {
         uint totalOwnedSynthetix = _collateral(_issuer);
 
-        (uint debtBalance, , bool anyRateIsInvalid) = _debtBalanceOfAndTotalDebt(_issuer, "SNX");
+        (uint debtBalance, , bool anyRateIsInvalid) = _debtBalanceOfAndTotalDebt(_issuer, "wrenBTC");
 
         // it's more gas intensive to put this check here if they have 0 SNX, but it complies with the interface
         if (totalOwnedSynthetix == 0) return (0, anyRateIsInvalid);
@@ -371,7 +371,7 @@ contract Issuer is Owned, MixinResolver, MixinSystemSettings, IIssuer {
         // 100 SNX to be locked in their wallet to maintain their collateralisation ratio
         // The locked synthetix value can exceed their balance.
         uint debtBalance;
-        (debtBalance, , anyRateIsInvalid) = _debtBalanceOfAndTotalDebt(account, "SNX");
+        (debtBalance, , anyRateIsInvalid) = _debtBalanceOfAndTotalDebt(account, "wrenBTC");
         uint lockedSynthetixValue = debtBalance.divideDecimalRound(getIssuanceRatio());
 
         // If we exceed the balance, no SNX are transferable, otherwise the difference is.
@@ -634,7 +634,7 @@ contract Issuer is Owned, MixinResolver, MixinSystemSettings, IIssuer {
         uint collateralForAccount = _collateral(account);
 
         // What is the value of their SNX balance in sUSD?
-        uint collateralValue = exchangeRates().effectiveValue("SNX", collateralForAccount, sUSD);
+        uint collateralValue = exchangeRates().effectiveValue("wrenBTC", collateralForAccount, sUSD);
 
         // What is their debt in sUSD?
         (uint debtBalance, uint totalDebtIssued, bool anyRateIsInvalid) = _debtBalanceOfAndTotalDebt(account, sUSD);
@@ -647,7 +647,7 @@ contract Issuer is Owned, MixinResolver, MixinSystemSettings, IIssuer {
         amountToLiquidate = amountToFixRatio < susdAmount ? amountToFixRatio : susdAmount;
 
         // what's the equivalent amount of snx for the amountToLiquidate?
-        uint snxRedeemed = exchangeRates().effectiveValue(sUSD, amountToLiquidate, "SNX");
+        uint snxRedeemed = exchangeRates().effectiveValue(sUSD, amountToLiquidate, "wrenBTC");
 
         // Add penalty
         totalRedeemed = snxRedeemed.multiplyDecimal(SafeDecimalMath.unit().add(liquidationPenalty));
@@ -661,7 +661,7 @@ contract Issuer is Owned, MixinResolver, MixinSystemSettings, IIssuer {
 
             // whats the equivalent sUSD to burn for all collateral less penalty
             amountToLiquidate = exchangeRates().effectiveValue(
-                "SNX",
+                "wrenBTC",
                 collateralForAccount.divideDecimal(SafeDecimalMath.unit().add(liquidationPenalty)),
                 sUSD
             );

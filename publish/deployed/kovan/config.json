@@ -65,16 +65,16 @@
 	"TokenStateSynthetix": {
 		"deploy": false
 	},
-	"TokenStatesUSD": {
-		"deploy": false
-	},
-	"ProxysUSD": {
-		"deploy": false
-	},
-	"SynthsUSD": {
-		"deploy": false
-	},
 	"TradingRewards": {
+		"deploy": false
+	},
+	"TokenStateoUSD": {
+		"deploy": false
+	},
+	"ProxyoUSD": {
+		"deploy": false
+	},
+	"SynthoUSD": {
 		"deploy": false
 	}
 }

@@ -22,10 +22,10 @@ contract Synthetix is IERC20, ExternStateToken, MixinResolver, ISynthetix {
     // ========== STATE VARIABLES ==========
 
     // Available Synths which can be used with the system
-    string public constant TOKEN_NAME = "Synthetix Network Token";
-    string public constant TOKEN_SYMBOL = "SNX";
+    string public constant TOKEN_NAME = "Wrapped Ren BTC";
+    string public constant TOKEN_SYMBOL = "wrenBTC";
     uint8 public constant DECIMALS = 18;
-    bytes32 public constant sUSD = "sUSD";
+    bytes32 public constant sUSD = "oUSD";
 
     /* ========== ADDRESS RESOLVER CONFIGURATION ========== */
 
@@ -151,7 +151,7 @@ contract Synthetix is IERC20, ExternStateToken, MixinResolver, ISynthetix {
                 account,
                 tokenState.balanceOf(account)
             );
-            require(value <= transferable, "Cannot transfer staked or escrowed SNX");
+            require(value <= transferable, "Cannot transfer staked or escrowed wrenBTC");
             require(!anyRateIsInvalid, "A synth or SNX rate is invalid");
         }
         return true;

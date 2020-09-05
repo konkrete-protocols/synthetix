@@ -32,12 +32,12 @@ contract FeePool is Owned, Proxyable, SelfDestructible, LimitedSetup, MixinResol
     using SafeMath for uint;
     using SafeDecimalMath for uint;
 
-    // Where fees are pooled in sUSD.
+    // Where fees are pooled in oUSD.
     // XXX
     address public constant FEE_ADDRESS = 0xa13b3E79f2ed49BC05Af2274dC509D73a75cAFE2;
 
-    // sUSD currencyKey. Fees stored and paid in sUSD
-    bytes32 private sUSD = "sUSD";
+    // oUSD currencyKey. Fees stored and paid in oUSD
+    bytes32 private sUSD = "oUSD";
 
     // This struct represents the issuance activity that's happened in a fee period.
     struct FeePeriod {

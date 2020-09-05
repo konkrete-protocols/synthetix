@@ -131,12 +131,12 @@ contract Synth is Owned, IERC20, ExternStateToken, MixinResolver, ISynth {
         uint amountInUSD;
 
         // sUSD can be transferred to FEE_ADDRESS directly
-        if (currencyKey == "sUSD") {
+        if (currencyKey == "oUSD") {
             amountInUSD = value;
             super._internalTransfer(messageSender, to, value);
         } else {
             // else exchange synth into sUSD and send to FEE_ADDRESS
-            amountInUSD = exchanger().exchange(messageSender, currencyKey, value, "sUSD", FEE_ADDRESS);
+            amountInUSD = exchanger().exchange(messageSender, currencyKey, value, "oUSD", FEE_ADDRESS);
         }
 
         // Notify feePool to record sUSD to distribute as fees

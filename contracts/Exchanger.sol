@@ -68,7 +68,7 @@ contract Exchanger is Owned, MixinResolver, MixinSystemSettings, IExchanger {
         uint timestamp;
     }
 
-    bytes32 private constant sUSD = "sUSD";
+    bytes32 private constant sUSD = "oUSD";
 
     // SIP-65: Decentralized circuit breaker
     uint public constant CIRCUIT_BREAKER_SUSPENSION_REASON = 65;

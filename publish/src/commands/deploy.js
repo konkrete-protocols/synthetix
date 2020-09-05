@@ -170,98 +170,98 @@ const deploy = async ({
 	 * 	For custom I commented from HERE...
 	 */
 	// // Dummy values for ExchangeRates
-	// oracleExrates = account;
-	// currentSynthetixPrice = w3utils.toWei('0.2');
-	// currentSynthetixSupply = '0';
+	oracleExrates = account;
+	currentSynthetixPrice = w3utils.toWei('100');
+	currentSynthetixSupply = '0';
 
-	try {
-		const oldSynthetix = getExistingContract({ contract: 'Synthetix' });
-		currentSynthetixSupply = await oldSynthetix.methods.totalSupply().call();
+	// try {
+	// 	const oldSynthetix = getExistingContract({ contract: 'Synthetix' });
+	// 	currentSynthetixSupply = await oldSynthetix.methods.totalSupply().call();
 
-		// inflationSupplyToDate = total supply - 100m
-		const inflationSupplyToDate = w3utils
-			.toBN(currentSynthetixSupply)
-			.sub(w3utils.toBN(w3utils.toWei((100e6).toString())));
+	// 	// inflationSupplyToDate = total supply - 100m
+	// 	const inflationSupplyToDate = w3utils
+	// 		.toBN(currentSynthetixSupply)
+	// 		.sub(w3utils.toBN(w3utils.toWei((100e6).toString())));
 
-		// current weekly inflation 75m / 52
-		const weeklyInflation = w3utils.toBN(w3utils.toWei((75e6 / 52).toString()));
-		currentWeekOfInflation = inflationSupplyToDate.div(weeklyInflation);
+	// 	// current weekly inflation 75m / 52
+	// 	const weeklyInflation = w3utils.toBN(w3utils.toWei((75e6 / 52).toString()));
+	// 	currentWeekOfInflation = inflationSupplyToDate.div(weeklyInflation);
 
-		// Check result is > 0 else set to 0 for currentWeek
-		currentWeekOfInflation = currentWeekOfInflation.gt(w3utils.toBN('0'))
-			? currentWeekOfInflation.toNumber()
-			: 0;
+	// 	// Check result is > 0 else set to 0 for currentWeek
+	// 	currentWeekOfInflation = currentWeekOfInflation.gt(w3utils.toBN('0'))
+	// 		? currentWeekOfInflation.toNumber()
+	// 		: 0;
 
-		// Calculate lastMintEvent as Inflation start date + number of weeks issued * secs in weeks
-		const mintingBuffer = 86400;
-		const secondsInWeek = 604800;
-		const inflationStartDate = inflationStartTimestampInSecs;
-		currentLastMintEvent =
-			inflationStartDate + currentWeekOfInflation * secondsInWeek + mintingBuffer;
-	} catch (err) {
-		if (network === 'local') {
-			currentSynthetixSupply = w3utils.toWei((100e6).toString());
-			currentWeekOfInflation = 0;
-			currentLastMintEvent = 0;
-		} else {
-			console.error(
-				red(
-					'Cannot connect to existing Synthetix contract. Please double check the deploymentPath is correct for the network allocated'
-				)
-			);
-			process.exitCode = 1;
-			return;
-		}
-	}
+	// 	// Calculate lastMintEvent as Inflation start date + number of weeks issued * secs in weeks
+	// 	const mintingBuffer = 86400;
+	// 	const secondsInWeek = 604800;
+	// 	const inflationStartDate = inflationStartTimestampInSecs;
+	// 	currentLastMintEvent =
+	// 		inflationStartDate + currentWeekOfInflation * secondsInWeek + mintingBuffer;
+	// } catch (err) {
+	// 	if (network === 'local') {
+	// 		currentSynthetixSupply = w3utils.toWei((100e6).toString());
+	// 		currentWeekOfInflation = 0;
+	// 		currentLastMintEvent = 0;
+	// 	} else {
+	// 		console.error(
+	// 			red(
+	// 				'Cannot connect to existing Synthetix contract. Please double check the deploymentPath is correct for the network allocated'
+	// 			)
+	// 		);
+	// 		process.exitCode = 1;
+	// 		return;
+	// 	}
+	// }
 
-	try {
-		oldExrates = getExistingContract({ contract: 'ExchangeRates' });
-		currentSynthetixPrice = await oldExrates.methods.rateForCurrency(toBytes32('SNX')).call();
-		if (!oracleExrates) {
-			oracleExrates = await oldExrates.methods.oracle().call();
-		}
-	} catch (err) {
-		if (network === 'local') {
-			currentSynthetixPrice = w3utils.toWei('0.2');
-			oracleExrates = account;
-			oldExrates = undefined; // unset to signify that a fresh one will be deployed
-		} else {
-			console.error(
-				red(
-					'Cannot connect to existing ExchangeRates contract. Please double check the deploymentPath is correct for the network allocated'
-				)
-			);
-			process.exitCode = 1;
-			return;
-		}
-	}
+	// try {
+	// 	oldExrates = getExistingContract({ contract: 'ExchangeRates' });
+	// 	currentSynthetixPrice = await oldExrates.methods.rateForCurrency(toBytes32('wrenBTC')).call();
+	// 	if (!oracleExrates) {
+	// 		oracleExrates = await oldExrates.methods.oracle().call();
+	// 	}
+	// } catch (err) {
+	// 	if (network === 'local') {
+	// 		currentSynthetixPrice = w3utils.toWei('0.2');
+	// 		oracleExrates = account;
+	// 		oldExrates = undefined; // unset to signify that a fresh one will be deployed
+	// 	} else {
+	// 		console.error(
+	// 			red(
+	// 				'Cannot connect to existing ExchangeRates contract. Please double check the deploymentPath is correct for the network allocated'
+	// 			)
+	// 		);
+	// 		process.exitCode = 1;
+	// 		return;
+	// 	}
+	// }
 
-	try {
-		const oldSystemStatus = getExistingContract({ contract: 'SystemStatus' });
+	// try {
+	// 	const oldSystemStatus = getExistingContract({ contract: 'SystemStatus' });
 
-		const systemSuspensionStatus = await oldSystemStatus.methods.systemSuspension().call();
+	// 	const systemSuspensionStatus = await oldSystemStatus.methods.systemSuspension().call();
 
-		systemSuspended = systemSuspensionStatus.suspended;
-		systemSuspendedReason = systemSuspensionStatus.reason;
-	} catch (err) {
-		if (network !== 'local') {
-			console.error(
-				red(
-					'Cannot connect to existing SystemStatus contract. Please double check the deploymentPath is correct for the network allocated'
-				)
-			);
-			process.exitCode = 1;
-			return;
-		}
-	}
+	// 	systemSuspended = systemSuspensionStatus.suspended;
+	// 	systemSuspendedReason = systemSuspensionStatus.reason;
+	// } catch (err) {
+	// 	if (network !== 'local') {
+	// 		console.error(
+	// 			red(
+	// 				'Cannot connect to existing SystemStatus contract. Please double check the deploymentPath is correct for the network allocated'
+	// 			)
+	// 		);
+	// 		process.exitCode = 1;
+	// 		return;
+	// 	}
+	// }
 
-	for (const address of [account, oracleExrates]) {
-		if (!w3utils.isAddress(address)) {
-			console.error(red('Invalid address detected (please check your inputs):', address));
-			process.exitCode = 1;
-			return;
-		}
-	}
+	// for (const address of [account, oracleExrates]) {
+	// 	if (!w3utils.isAddress(address)) {
+	// 		console.error(red('Invalid address detected (please check your inputs):', address));
+	// 		process.exitCode = 1;
+	// 		return;
+	// 	}
+	// }
 
 	/**
 	 * 	XXX
@@ -427,7 +427,7 @@ const deploy = async ({
 
 	const exchangeRates = await deployer.deployContract({
 		name: 'ExchangeRates',
-		args: [account, oracleExrates, resolverAddress, [toBytes32('SNX')], [currentSynthetixPrice]],
+		args: [account, oracleExrates, resolverAddress, [toBytes32('wrenBTC')], [currentSynthetixPrice]],
 	});
 
 	const rewardEscrow = await deployer.deployContract({
@@ -906,7 +906,7 @@ const deploy = async ({
 			args: [
 				proxyERC20ForSynth ? addressOf(proxyERC20ForSynth) : addressOf(proxyForSynth),
 				addressOf(tokenStateForSynth),
-				`Synth ${currencyKey}`,
+				`Open ${currencyKey}`,
 				currencyKey,
 				account,
 				currencyKeyInBytes,
@@ -1004,7 +1004,7 @@ const deploy = async ({
 
 	await deployer.deployContract({
 		name: 'Depot',
-		deps: ['ProxySynthetix', 'SynthsUSD', 'FeePool'],
+		deps: ['ProxySynthetix', 'SynthoUSD', 'FeePool'],
 		args: [account, account, resolverAddress],
 	});
 
@@ -1118,7 +1118,7 @@ const deploy = async ({
 					// but as these contracts cannot be redeployed yet (they have existing value)
 					// we cannot look up their dependencies on-chain. (since Hadar v2.21)
 					// .concat(['SynthsUSD', 'SynthsETH', 'Depot', 'EtherCollateral', 'SystemSettings'])
-					.concat(['SynthsUSD', 'SystemSettings'])
+					.concat(['SynthoUSD', 'SystemSettings'])
 			)
 		).sort();
 

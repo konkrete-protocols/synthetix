@@ -65,8 +65,8 @@ contract ExchangeRates is Owned, SelfDestructible, MixinResolver, MixinSystemSet
 
         oracle = _oracle;
 
-        // The sUSD rate is always 1 and is never stale.
-        _setRate("sUSD", SafeDecimalMath.unit(), now);
+        // The oUSD rate is always 1 and is never stale.
+        _setRate("oUSD", SafeDecimalMath.unit(), now);
 
         internalUpdateRates(_currencyKeys, _newRates, now);
     }
@@ -368,7 +368,7 @@ contract ExchangeRates is Owned, SelfDestructible, MixinResolver, MixinSystemSet
             // do one lookup of the rate & time to minimize gas
             RateAndUpdatedTime memory rateEntry = _getRateAndUpdatedTime(currencyKeys[i]);
             rates[i] = rateEntry.rate;
-            if (!anyRateInvalid && currencyKeys[i] != "sUSD") {
+            if (!anyRateInvalid && currencyKeys[i] != "oUSD") {
                 anyRateInvalid = flagList[i] || _rateIsStaleWithTime(_rateStalePeriod, rateEntry.time);
             }
         }
@@ -460,7 +460,7 @@ contract ExchangeRates is Owned, SelfDestructible, MixinResolver, MixinSystemSet
             // truely worthless and still valid. In this scenario, we should
             // delete the rate and remove it from the system.
             require(newRates[i] != 0, "Zero is not a valid rate, please call deleteRate instead.");
-            require(currencyKey != "sUSD", "Rate of sUSD cannot be updated, it's always UNIT.");
+            require(currencyKey != "oUSD", "Rate of oUSD cannot be updated, it's always UNIT.");
 
             // We should only update the rate if it's at least the same age as the last rate we've got.
             if (timeSent < _getUpdatedTime(currencyKey)) {
@@ -609,8 +609,8 @@ contract ExchangeRates is Owned, SelfDestructible, MixinResolver, MixinSystemSet
     }
 
     function _rateIsStale(bytes32 currencyKey, uint _rateStalePeriod) internal view returns (bool) {
-        // sUSD is a special case and is never stale (check before an SLOAD of getRateAndUpdatedTime)
-        if (currencyKey == "sUSD") return false;
+        // oUSD is a special case and is never stale (check before an SLOAD of getRateAndUpdatedTime)
+        if (currencyKey == "oUSD") return false;
 
         return _rateIsStaleWithTime(_rateStalePeriod, _getUpdatedTime(currencyKey));
     }
@@ -625,8 +625,8 @@ contract ExchangeRates is Owned, SelfDestructible, MixinResolver, MixinSystemSet
     }
 
     function _rateIsFlagged(bytes32 currencyKey, FlagsInterface flags) internal view returns (bool) {
-        // sUSD is a special case and is never invalid
-        if (currencyKey == "sUSD") return false;
+        // oUSD is a special case and is never invalid
+        if (currencyKey == "oUSD") return false;
         address aggregator = address(aggregators[currencyKey]);
         // when no aggregator or when the flags haven't been setup
         if (aggregator == address(0) || flags == FlagsInterface(0)) {
