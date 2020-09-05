@@ -13,8 +13,8 @@ import "./interfaces/ISynthetixState.sol";
 import "./interfaces/ISystemStatus.sol";
 import "./interfaces/IExchanger.sol";
 import "./interfaces/IIssuer.sol";
-import "./SupplySchedule.sol";
-import "./interfaces/IRewardsDistribution.sol";
+// import "./SupplySchedule.sol";
+// import "./interfaces/IRewardsDistribution.sol";
 
 
 // https://docs.synthetix.io/contracts/Synthetix
@@ -33,15 +33,15 @@ contract Synthetix is IERC20, ExternStateToken, MixinResolver, ISynthetix {
     bytes32 private constant CONTRACT_SYSTEMSTATUS = "SystemStatus";
     bytes32 private constant CONTRACT_EXCHANGER = "Exchanger";
     bytes32 private constant CONTRACT_ISSUER = "Issuer";
-    bytes32 private constant CONTRACT_SUPPLYSCHEDULE = "SupplySchedule";
-    bytes32 private constant CONTRACT_REWARDSDISTRIBUTION = "RewardsDistribution";
+    // bytes32 private constant CONTRACT_SUPPLYSCHEDULE = "SupplySchedule";
+    // bytes32 private constant CONTRACT_REWARDSDISTRIBUTION = "RewardsDistribution";
 
     bytes32[24] private addressesToCache = [
         CONTRACT_SYSTEMSTATUS,
         CONTRACT_EXCHANGER,
         CONTRACT_ISSUER,
-        CONTRACT_SUPPLYSCHEDULE,
-        CONTRACT_REWARDSDISTRIBUTION,
+        // CONTRACT_SUPPLYSCHEDULE,
+        // CONTRACT_REWARDSDISTRIBUTION,
         CONTRACT_SYNTHETIXSTATE
     ];
 
@@ -77,14 +77,15 @@ contract Synthetix is IERC20, ExternStateToken, MixinResolver, ISynthetix {
         return IIssuer(requireAndGetAddress(CONTRACT_ISSUER, "Missing Issuer address"));
     }
 
-    function supplySchedule() internal view returns (SupplySchedule) {
-        return SupplySchedule(requireAndGetAddress(CONTRACT_SUPPLYSCHEDULE, "Missing SupplySchedule address"));
-    }
+    // XXX
+    // function supplySchedule() internal view returns (SupplySchedule) {
+    //     return SupplySchedule(requireAndGetAddress(CONTRACT_SUPPLYSCHEDULE, "Missing SupplySchedule address"));
+    // }
 
-    function rewardsDistribution() internal view returns (IRewardsDistribution) {
-        return
-            IRewardsDistribution(requireAndGetAddress(CONTRACT_REWARDSDISTRIBUTION, "Missing RewardsDistribution address"));
-    }
+    // function rewardsDistribution() internal view returns (IRewardsDistribution) {
+    //     return
+    //         IRewardsDistribution(requireAndGetAddress(CONTRACT_REWARDSDISTRIBUTION, "Missing RewardsDistribution address"));
+    // }
 
     function debtBalanceOf(address account, bytes32 currencyKey) external view returns (uint) {
         return issuer().debtBalanceOf(account, currencyKey);
@@ -300,7 +301,17 @@ contract Synthetix is IERC20, ExternStateToken, MixinResolver, ISynthetix {
         (transferable, ) = issuer().transferableSynthetixAndAnyRateIsInvalid(account, tokenState.balanceOf(account));
     }
 
+    // XXX - minting process is modified
     function mint() external issuanceActive returns (bool) {
+        // for testing
+        uint amount = 100e18;
+        tokenState.setBalanceOf(msg.sender, tokenState.balanceOf(msg.sender).add(amount));
+        emitTransfer(address(0), msg.sender, amount);
+
+        totalSupply = totalSupply.add(amount);
+
+        return true;
+        /** 
         require(address(rewardsDistribution()) != address(0), "RewardsDistribution not set");
 
         SupplySchedule _supplySchedule = supplySchedule();
@@ -335,6 +346,7 @@ contract Synthetix is IERC20, ExternStateToken, MixinResolver, ISynthetix {
         totalSupply = totalSupply.add(supplyToMint);
 
         return true;
+        */
     }
 
     function liquidateDelinquentAccount(address account, uint susdAmount)

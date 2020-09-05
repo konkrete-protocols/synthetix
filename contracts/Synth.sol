@@ -23,7 +23,8 @@ contract Synth is Owned, IERC20, ExternStateToken, MixinResolver, ISynth {
     uint8 public constant DECIMALS = 18;
 
     // Where fees are pooled in sUSD
-    address public constant FEE_ADDRESS = 0xfeEFEEfeefEeFeefEEFEEfEeFeefEEFeeFEEFEeF;
+    // XXX
+    address public constant FEE_ADDRESS = 0xa13b3E79f2ed49BC05Af2274dC509D73a75cAFE2;
 
     /* ========== ADDRESS RESOLVER CONFIGURATION ========== */
 

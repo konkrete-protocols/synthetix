@@ -17,9 +17,9 @@ import "./interfaces/ISynthetixState.sol";
 import "./interfaces/IExchanger.sol";
 import "./interfaces/IDelegateApprovals.sol";
 import "./interfaces/IExchangeRates.sol";
-import "./interfaces/IEtherCollateral.sol";
-import "./interfaces/IRewardEscrow.sol";
-import "./interfaces/IHasBalance.sol";
+// import "./interfaces/IEtherCollateral.sol";
+// import "./interfaces/IRewardEscrow.sol";
+// import "./interfaces/IHasBalance.sol";
 import "./interfaces/IERC20.sol";
 import "./interfaces/ILiquidations.sol";
 
@@ -46,9 +46,9 @@ contract Issuer is Owned, MixinResolver, MixinSystemSettings, IIssuer {
     bytes32 private constant CONTRACT_SYNTHETIXSTATE = "SynthetixState";
     bytes32 private constant CONTRACT_FEEPOOL = "FeePool";
     bytes32 private constant CONTRACT_DELEGATEAPPROVALS = "DelegateApprovals";
-    bytes32 private constant CONTRACT_ETHERCOLLATERAL = "EtherCollateral";
-    bytes32 private constant CONTRACT_REWARDESCROW = "RewardEscrow";
-    bytes32 private constant CONTRACT_SYNTHETIXESCROW = "SynthetixEscrow";
+    // bytes32 private constant CONTRACT_ETHERCOLLATERAL = "EtherCollateral";
+    // bytes32 private constant CONTRACT_REWARDESCROW = "RewardEscrow";
+    // bytes32 private constant CONTRACT_SYNTHETIXESCROW = "SynthetixEscrow";
     bytes32 private constant CONTRACT_LIQUIDATIONS = "Liquidations";
 
     bytes32[24] private addressesToCache = [
@@ -58,9 +58,9 @@ contract Issuer is Owned, MixinResolver, MixinSystemSettings, IIssuer {
         CONTRACT_SYNTHETIXSTATE,
         CONTRACT_FEEPOOL,
         CONTRACT_DELEGATEAPPROVALS,
-        CONTRACT_ETHERCOLLATERAL,
-        CONTRACT_REWARDESCROW,
-        CONTRACT_SYNTHETIXESCROW,
+        // CONTRACT_ETHERCOLLATERAL,
+        // CONTRACT_REWARDESCROW,
+        // CONTRACT_SYNTHETIXESCROW,
         CONTRACT_LIQUIDATIONS
     ];
 
@@ -104,17 +104,18 @@ contract Issuer is Owned, MixinResolver, MixinSystemSettings, IIssuer {
         return IDelegateApprovals(requireAndGetAddress(CONTRACT_DELEGATEAPPROVALS, "Missing DelegateApprovals address"));
     }
 
-    function etherCollateral() internal view returns (IEtherCollateral) {
-        return IEtherCollateral(requireAndGetAddress(CONTRACT_ETHERCOLLATERAL, "Missing EtherCollateral address"));
-    }
+    // XXX
+    // function etherCollateral() internal view returns (IEtherCollateral) {
+    //     return IEtherCollateral(requireAndGetAddress(CONTRACT_ETHERCOLLATERAL, "Missing EtherCollateral address"));
+    // }
 
-    function rewardEscrow() internal view returns (IRewardEscrow) {
-        return IRewardEscrow(requireAndGetAddress(CONTRACT_REWARDESCROW, "Missing RewardEscrow address"));
-    }
+    // function rewardEscrow() internal view returns (IRewardEscrow) {
+    //     return IRewardEscrow(requireAndGetAddress(CONTRACT_REWARDESCROW, "Missing RewardEscrow address"));
+    // }
 
-    function synthetixEscrow() internal view returns (IHasBalance) {
-        return IHasBalance(requireAndGetAddress(CONTRACT_SYNTHETIXESCROW, "Missing SynthetixEscrow address"));
-    }
+    // function synthetixEscrow() internal view returns (IHasBalance) {
+    //     return IHasBalance(requireAndGetAddress(CONTRACT_SYNTHETIXESCROW, "Missing SynthetixEscrow address"));
+    // }
 
     function issuanceRatio() external view returns (uint) {
         return getIssuanceRatio();
@@ -156,9 +157,11 @@ contract Issuer is Owned, MixinResolver, MixinSystemSettings, IIssuer {
             uint totalSynths = IERC20(address(synths[synth])).totalSupply();
 
             // minus total issued synths from Ether Collateral from sETH.totalSupply()
-            if (excludeEtherCollateral && synth == "sETH") {
-                totalSynths = totalSynths.sub(etherCollateral().totalIssuedSynths());
-            }
+            // XXX - no use of etherCollateral for now
+            excludeEtherCollateral;  // shh
+            // if (excludeEtherCollateral && synth == "sETH") {
+            //     totalSynths = totalSynths.sub(etherCollateral().totalIssuedSynths());
+            // }
 
             uint synthValue = totalSynths.multiplyDecimalRound(rates[i]);
             total = total.add(synthValue);
@@ -266,13 +269,14 @@ contract Issuer is Owned, MixinResolver, MixinSystemSettings, IIssuer {
     function _collateral(address account) internal view returns (uint) {
         uint balance = synthetixERC20().balanceOf(account);
 
-        if (address(synthetixEscrow()) != address(0)) {
-            balance = balance.add(synthetixEscrow().balanceOf(account));
-        }
+        // XXX
+        // if (address(synthetixEscrow()) != address(0)) {
+        //     balance = balance.add(synthetixEscrow().balanceOf(account));
+        // }
 
-        if (address(rewardEscrow()) != address(0)) {
-            balance = balance.add(rewardEscrow().balanceOf(account));
-        }
+        // if (address(rewardEscrow()) != address(0)) {
+        //     balance = balance.add(rewardEscrow().balanceOf(account));
+        // }
 
         return balance;
     }

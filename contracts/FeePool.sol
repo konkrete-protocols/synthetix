@@ -22,9 +22,9 @@ import "./FeePoolEternalStorage.sol";
 import "./interfaces/IExchanger.sol";
 import "./interfaces/IIssuer.sol";
 import "./interfaces/ISynthetixState.sol";
-import "./interfaces/IRewardEscrow.sol";
+// import "./interfaces/IRewardEscrow.sol";
 import "./interfaces/IDelegateApprovals.sol";
-import "./interfaces/IRewardsDistribution.sol";
+// import "./interfaces/IRewardsDistribution.sol";
 
 
 // https://docs.synthetix.io/contracts/FeePool
@@ -33,7 +33,8 @@ contract FeePool is Owned, Proxyable, SelfDestructible, LimitedSetup, MixinResol
     using SafeDecimalMath for uint;
 
     // Where fees are pooled in sUSD.
-    address public constant FEE_ADDRESS = 0xfeEFEEfeefEeFeefEEFEEfEeFeefEEFeeFEEFEeF;
+    // XXX
+    address public constant FEE_ADDRESS = 0xa13b3E79f2ed49BC05Af2274dC509D73a75cAFE2;
 
     // sUSD currencyKey. Fees stored and paid in sUSD
     bytes32 private sUSD = "sUSD";
@@ -68,9 +69,9 @@ contract FeePool is Owned, Proxyable, SelfDestructible, LimitedSetup, MixinResol
     bytes32 private constant CONTRACT_EXCHANGER = "Exchanger";
     bytes32 private constant CONTRACT_ISSUER = "Issuer";
     bytes32 private constant CONTRACT_SYNTHETIXSTATE = "SynthetixState";
-    bytes32 private constant CONTRACT_REWARDESCROW = "RewardEscrow";
+    // bytes32 private constant CONTRACT_REWARDESCROW = "RewardEscrow";
     bytes32 private constant CONTRACT_DELEGATEAPPROVALS = "DelegateApprovals";
-    bytes32 private constant CONTRACT_REWARDSDISTRIBUTION = "RewardsDistribution";
+    // bytes32 private constant CONTRACT_REWARDSDISTRIBUTION = "RewardsDistribution";
 
     bytes32[24] private addressesToCache = [
         CONTRACT_SYSTEMSTATUS,
@@ -80,9 +81,9 @@ contract FeePool is Owned, Proxyable, SelfDestructible, LimitedSetup, MixinResol
         CONTRACT_EXCHANGER,
         CONTRACT_ISSUER,
         CONTRACT_SYNTHETIXSTATE,
-        CONTRACT_REWARDESCROW,
-        CONTRACT_DELEGATEAPPROVALS,
-        CONTRACT_REWARDSDISTRIBUTION
+        // CONTRACT_REWARDESCROW,
+        CONTRACT_DELEGATEAPPROVALS
+        // CONTRACT_REWARDSDISTRIBUTION
     ];
 
     /* ========== ETERNAL STORAGE CONSTANTS ========== */
@@ -140,18 +141,20 @@ contract FeePool is Owned, Proxyable, SelfDestructible, LimitedSetup, MixinResol
         return ISynthetixState(requireAndGetAddress(CONTRACT_SYNTHETIXSTATE, "Missing SynthetixState address"));
     }
 
-    function rewardEscrow() internal view returns (IRewardEscrow) {
-        return IRewardEscrow(requireAndGetAddress(CONTRACT_REWARDESCROW, "Missing RewardEscrow address"));
-    }
+    // XXX
+    // function rewardEscrow() internal view returns (IRewardEscrow) {
+    //     return IRewardEscrow(requireAndGetAddress(CONTRACT_REWARDESCROW, "Missing RewardEscrow address"));
+    // }
 
     function delegateApprovals() internal view returns (IDelegateApprovals) {
         return IDelegateApprovals(requireAndGetAddress(CONTRACT_DELEGATEAPPROVALS, "Missing DelegateApprovals address"));
     }
 
-    function rewardsDistribution() internal view returns (IRewardsDistribution) {
-        return
-            IRewardsDistribution(requireAndGetAddress(CONTRACT_REWARDSDISTRIBUTION, "Missing RewardsDistribution address"));
-    }
+    // XXX
+    // function rewardsDistribution() internal view returns (IRewardsDistribution) {
+    //     return
+    //         IRewardsDistribution(requireAndGetAddress(CONTRACT_REWARDSDISTRIBUTION, "Missing RewardsDistribution address"));
+    // }
 
     function issuanceRatio() external view returns (uint) {
         return getIssuanceRatio();
@@ -228,14 +231,17 @@ contract FeePool is Owned, Proxyable, SelfDestructible, LimitedSetup, MixinResol
         _recentFeePeriodsStorage(0).feesToDistribute = _recentFeePeriodsStorage(0).feesToDistribute.add(amount);
     }
 
+    // XXX - can't remove funtion since it is defined in interface
     /**
      * @notice The RewardsDistribution contract informs us how many SNX rewards are sent to RewardEscrow to be claimed.
      */
     function setRewardsToDistribute(uint amount) external {
-        address rewardsAuthority = address(rewardsDistribution());
-        require(messageSender == rewardsAuthority || msg.sender == rewardsAuthority, "Caller is not rewardsAuthority");
-        // Add the amount of SNX rewards to distribute on top of any rolling unclaimed amount
-        _recentFeePeriodsStorage(0).rewardsToDistribute = _recentFeePeriodsStorage(0).rewardsToDistribute.add(amount);
+        amount;     // shh
+        revert("function implementation removed");
+        // address rewardsAuthority = address(rewardsDistribution());
+        // require(messageSender == rewardsAuthority || msg.sender == rewardsAuthority, "Caller is not rewardsAuthority");
+        // // Add the amount of SNX rewards to distribute on top of any rolling unclaimed amount
+        // _recentFeePeriodsStorage(0).rewardsToDistribute = _recentFeePeriodsStorage(0).rewardsToDistribute.add(amount);
     }
 
     /**
@@ -330,13 +336,14 @@ contract FeePool is Owned, Proxyable, SelfDestructible, LimitedSetup, MixinResol
             _payFees(claimingAddress, feesPaid);
         }
 
-        if (availableRewards > 0) {
-            // Record the reward payment in our recentFeePeriods
-            rewardsPaid = _recordRewardPayment(availableRewards);
+        // XXX - _payRewards removed
+        // if (availableRewards > 0) {
+        //     // Record the reward payment in our recentFeePeriods
+        //     rewardsPaid = _recordRewardPayment(availableRewards);
 
-            // Send them their rewards
-            _payRewards(claimingAddress, rewardsPaid);
-        }
+        //     // Send them their rewards
+        //     _payRewards(claimingAddress, rewardsPaid);
+        // }
 
         emitFeesClaimed(claimingAddress, feesPaid, rewardsPaid);
 
@@ -369,18 +376,19 @@ contract FeePool is Owned, Proxyable, SelfDestructible, LimitedSetup, MixinResol
         });
     }
 
-    /**
-     * @notice Owner can escrow SNX. Owner to send the tokens to the RewardEscrow
-     * @param account Address to escrow tokens for
-     * @param quantity Amount of tokens to escrow
-     */
-    function appendVestingEntry(address account, uint quantity) public optionalProxy_onlyOwner {
-        // Transfer SNX from messageSender to the Reward Escrow
-        IERC20(address(synthetix())).transferFrom(messageSender, address(rewardEscrow()), quantity);
+    // XXX - removed
+    // /**
+    //  * @notice Owner can escrow SNX. Owner to send the tokens to the RewardEscrow
+    //  * @param account Address to escrow tokens for
+    //  * @param quantity Amount of tokens to escrow
+    //  */
+    // function appendVestingEntry(address account, uint quantity) public optionalProxy_onlyOwner {
+    //     // Transfer SNX from messageSender to the Reward Escrow
+    //     IERC20(address(synthetix())).transferFrom(messageSender, address(rewardEscrow()), quantity);
 
-        // Create Vesting Entry
-        rewardEscrow().appendVestingEntry(account, quantity);
-    }
+    //     // Create Vesting Entry
+    //     rewardEscrow().appendVestingEntry(account, quantity);
+    // }
 
     /**
      * @notice Record the fee payment in our recentFeePeriods.
@@ -480,16 +488,17 @@ contract FeePool is Owned, Proxyable, SelfDestructible, LimitedSetup, MixinResol
         sUSDSynth.issue(account, sUSDAmount);
     }
 
-    /**
-     * @notice Send the rewards to claiming address - will be locked in rewardEscrow.
-     * @param account The address to send the fees to.
-     * @param snxAmount The amount of SNX.
-     */
-    function _payRewards(address account, uint snxAmount) internal notFeeAddress(account) {
-        // Record vesting entry for claiming address and amount
-        // SNX already minted to rewardEscrow balance
-        rewardEscrow().appendVestingEntry(account, snxAmount);
-    }
+    // XXX - removed
+    // /**
+    //  * @notice Send the rewards to claiming address - will be locked in rewardEscrow.
+    //  * @param account The address to send the fees to.
+    //  * @param snxAmount The amount of SNX.
+    //  */
+    // function _payRewards(address account, uint snxAmount) internal notFeeAddress(account) {
+    //     // Record vesting entry for claiming address and amount
+    //     // SNX already minted to rewardEscrow balance
+    //     rewardEscrow().appendVestingEntry(account, snxAmount);
+    // }
 
     /**
      * @notice The total fees available in the system to be withdrawnn in sUSD

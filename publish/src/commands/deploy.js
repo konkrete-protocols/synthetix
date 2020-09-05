@@ -165,6 +165,15 @@ const deploy = async ({
 	let systemSuspended = false;
 	let systemSuspendedReason;
 
+	/**
+	 * 	XXX
+	 * 	For custom I commented from HERE...
+	 */
+	// // Dummy values for ExchangeRates
+	// oracleExrates = account;
+	// currentSynthetixPrice = w3utils.toWei('0.2');
+	// currentSynthetixSupply = '0';
+
 	try {
 		const oldSynthetix = getExistingContract({ contract: 'Synthetix' });
 		currentSynthetixSupply = await oldSynthetix.methods.totalSupply().call();
@@ -254,6 +263,11 @@ const deploy = async ({
 		}
 	}
 
+	/**
+	 * 	XXX
+	 * 	till HERE...
+	 */
+
 	const newSynthsToAdd = synths
 		.filter(({ name }) => !config[`Synth${name}`])
 		.map(({ name }) => name);
@@ -311,7 +325,7 @@ const deploy = async ({
 			? green('✅ YES\n\t\t\t\t') + newSynthsToAdd.join(', ')
 			: yellow('⚠ NO'),
 		'Deployer account:': account,
-		'Synthetix totalSupply': `${Math.round(w3utils.fromWei(currentSynthetixSupply) / 1e6)}m`,
+		'Synthetix totalSupply': `${Math.round(w3utils.fromWei(currentSynthetixSupply))}`,
 		'ExchangeRates Oracle': oracleExrates,
 		'Last Mint Event': `${currentLastMintEvent} (${new Date(currentLastMintEvent * 1000)})`,
 		'Current Weeks Of Inflation': currentWeekOfInflation,
@@ -773,30 +787,31 @@ const deploy = async ({
 	// Setting proxyERC20 Synthetix for synthetixEscrow
 	// ----------------
 
+	// XXX - Commented as we are not using SynthetixEscrow
 	// Skip setting unless redeploying either of these,
-	if (config['Synthetix'].deploy || config['SynthetixEscrow'].deploy) {
-		// Note: currently on mainnet SynthetixEscrow.methods.synthetix() does NOT exist
-		// it is "havven" and the ABI we have here is not sufficient
-		if (network === 'mainnet') {
-			await runStep({
-				contract: 'SynthetixEscrow',
-				target: synthetixEscrow,
-				read: 'havven',
-				expected: input => input === addressOf(proxyERC20Synthetix),
-				write: 'setHavven',
-				writeArg: addressOf(proxyERC20Synthetix),
-			});
-		} else {
-			await runStep({
-				contract: 'SynthetixEscrow',
-				target: synthetixEscrow,
-				read: 'synthetix',
-				expected: input => input === addressOf(proxyERC20Synthetix),
-				write: 'setSynthetix',
-				writeArg: addressOf(proxyERC20Synthetix),
-			});
-		}
-	}
+	// if (config['Synthetix'].deploy || config['SynthetixEscrow'].deploy) {
+	// 	// Note: currently on mainnet SynthetixEscrow.methods.synthetix() does NOT exist
+	// 	// it is "havven" and the ABI we have here is not sufficient
+	// 	if (network === 'mainnet') {
+	// 		await runStep({
+	// 			contract: 'SynthetixEscrow',
+	// 			target: synthetixEscrow,
+	// 			read: 'havven',
+	// 			expected: input => input === addressOf(proxyERC20Synthetix),
+	// 			write: 'setHavven',
+	// 			writeArg: addressOf(proxyERC20Synthetix),
+	// 		});
+	// 	} else {
+	// 		await runStep({
+	// 			contract: 'SynthetixEscrow',
+	// 			target: synthetixEscrow,
+	// 			read: 'synthetix',
+	// 			expected: input => input === addressOf(proxyERC20Synthetix),
+	// 			write: 'setSynthetix',
+	// 			writeArg: addressOf(proxyERC20Synthetix),
+	// 		});
+	// 	}
+	// }
 
 	// ----------------
 	// Synths
@@ -817,25 +832,27 @@ const deploy = async ({
 		// https://docs.synthetix.io/integrations/guide/#proxy-deprecation
 		// Until this time, on mainnet we will still deploy ProxyERC20sUSD and ensure that
 		// SynthsUSD.proxy is ProxyERC20sUSD, SynthsUSD.integrationProxy is ProxysUSD
-		const synthProxyIsLegacy = currencyKey === 'sUSD' && network === 'mainnet';
 
+		// XXX - no need for legacy proxy
+		// const synthProxyIsLegacy = currencyKey === 'sUSD' && network === 'mainnet';
 		const proxyForSynth = await deployer.deployContract({
 			name: `Proxy${currencyKey}`,
-			source: synthProxyIsLegacy ? 'Proxy' : 'ProxyERC20',
+			// source: synthProxyIsLegacy ? 'Proxy' : 'ProxyERC20',
+			source: 'ProxyERC20',
 			args: [account],
 			force: addNewSynths,
 		});
 
 		// additionally deploy an ERC20 proxy for the synth if it's legacy (sUSD)
 		let proxyERC20ForSynth;
-		if (currencyKey === 'sUSD') {
-			proxyERC20ForSynth = await deployer.deployContract({
-				name: `ProxyERC20${currencyKey}`,
-				source: `ProxyERC20`,
-				args: [account],
-				force: addNewSynths,
-			});
-		}
+		// if (currencyKey === 'sUSD') {
+		// 	proxyERC20ForSynth = await deployer.deployContract({
+		// 		name: `ProxyERC20${currencyKey}`,
+		// 		source: `ProxyERC20`,
+		// 		args: [account],
+		// 		force: addNewSynths,
+		// 	});
+		// }
 
 		const currencyKeyInBytes = toBytes32(currencyKey);
 
@@ -843,18 +860,20 @@ const deploy = async ({
 
 		// track the original supply if we're deploying a new synth contract for an existing synth
 		let originalTotalSupply = 0;
-		if (synthConfig.deploy) {
-			try {
-				const oldSynth = getExistingContract({ contract: `Synth${currencyKey}` });
-				originalTotalSupply = await oldSynth.methods.totalSupply().call();
-			} catch (err) {
-				if (network !== 'local') {
-					// only throw if not local - allows local environments to handle both new
-					// and updating configurations
-					throw err;
-				}
-			}
-		}
+		// XXX - Since our Synth deployments are fresh, this code in not needed
+		// TODO - Will be needed for upgrades
+		// if (synthConfig.deploy) {
+		// 	try {
+		// 		const oldSynth = getExistingContract({ contract: `Synth${currencyKey}` });
+		// 		originalTotalSupply = await oldSynth.methods.totalSupply().call();
+		// 	} catch (err) {
+		// 		if (network !== 'local') {
+		// 			// only throw if not local - allows local environments to handle both new
+		// 			// and updating configurations
+		// 			throw err;
+		// 		}
+		// 	}
+		// }
 
 		// MultiCollateral needs additionalConstructorArgs to be ordered
 		const additionalConstructorArgsMap = {
@@ -1098,7 +1117,8 @@ const deploy = async ({
 					// Note: The below are required for Depot.sol and EtherCollateral.sol
 					// but as these contracts cannot be redeployed yet (they have existing value)
 					// we cannot look up their dependencies on-chain. (since Hadar v2.21)
-					.concat(['SynthsUSD', 'SynthsETH', 'Depot', 'EtherCollateral', 'SystemSettings'])
+					// .concat(['SynthsUSD', 'SynthsETH', 'Depot', 'EtherCollateral', 'SystemSettings'])
+					.concat(['SynthsUSD', 'SystemSettings'])
 			)
 		).sort();
 
