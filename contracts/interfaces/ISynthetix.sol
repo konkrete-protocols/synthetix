@@ -89,7 +89,8 @@ interface ISynthetix {
 
     function issueSynthsOnBehalf(address issueForAddress, uint amount) external;
 
-    function mint() external returns (bool);
+    // XXX - removed default mint()
+    // function mint() external returns (bool);
 
     function settle(bytes32 currencyKey)
         external

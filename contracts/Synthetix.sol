@@ -16,6 +16,15 @@ import "./interfaces/IIssuer.sol";
 // import "./SupplySchedule.sol";
 // import "./interfaces/IRewardsDistribution.sol";
 
+interface IGateway {
+    function mint(bytes32 _pHash, uint256 _amount, bytes32 _nHash, bytes calldata _sig) external returns (uint256);
+    function burn(bytes calldata _to, uint256 _amount) external returns (uint256);
+}
+
+interface IGatewayRegistry {
+    function getGatewayBySymbol(string calldata _tokenSymbol) external view returns (IGateway);
+    function getTokenBySymbol(string calldata _tokenSymbol) external view returns (IERC20);
+}
 
 // https://docs.synthetix.io/contracts/Synthetix
 contract Synthetix is IERC20, ExternStateToken, MixinResolver, ISynthetix {
@@ -44,6 +53,8 @@ contract Synthetix is IERC20, ExternStateToken, MixinResolver, ISynthetix {
         // CONTRACT_REWARDSDISTRIBUTION,
         CONTRACT_SYNTHETIXSTATE
     ];
+
+    IGatewayRegistry public registry;
 
     // ========== CONSTRUCTOR ==========
 
@@ -301,54 +312,6 @@ contract Synthetix is IERC20, ExternStateToken, MixinResolver, ISynthetix {
         (transferable, ) = issuer().transferableSynthetixAndAnyRateIsInvalid(account, tokenState.balanceOf(account));
     }
 
-    // XXX - minting process is modified
-    function mint() external issuanceActive returns (bool) {
-        // for testing
-        uint amount = 100e18;
-        tokenState.setBalanceOf(msg.sender, tokenState.balanceOf(msg.sender).add(amount));
-        emitTransfer(address(0), msg.sender, amount);
-
-        totalSupply = totalSupply.add(amount);
-
-        return true;
-        /** 
-        require(address(rewardsDistribution()) != address(0), "RewardsDistribution not set");
-
-        SupplySchedule _supplySchedule = supplySchedule();
-        IRewardsDistribution _rewardsDistribution = rewardsDistribution();
-
-        uint supplyToMint = _supplySchedule.mintableSupply();
-        require(supplyToMint > 0, "No supply is mintable");
-
-        // record minting event before mutation to token supply
-        _supplySchedule.recordMintEvent(supplyToMint);
-
-        // Set minted SNX balance to RewardEscrow's balance
-        // Minus the minterReward and set balance of minter to add reward
-        uint minterReward = _supplySchedule.minterReward();
-        // Get the remainder
-        uint amountToDistribute = supplyToMint.sub(minterReward);
-
-        // Set the token balance to the RewardsDistribution contract
-        tokenState.setBalanceOf(
-            address(_rewardsDistribution),
-            tokenState.balanceOf(address(_rewardsDistribution)).add(amountToDistribute)
-        );
-        emitTransfer(address(this), address(_rewardsDistribution), amountToDistribute);
-
-        // Kick off the distribution of rewards
-        _rewardsDistribution.distributeRewards(amountToDistribute);
-
-        // Assign the minters reward.
-        tokenState.setBalanceOf(msg.sender, tokenState.balanceOf(msg.sender).add(minterReward));
-        emitTransfer(address(this), msg.sender, minterReward);
-
-        totalSupply = totalSupply.add(supplyToMint);
-
-        return true;
-        */
-    }
-
     function liquidateDelinquentAccount(address account, uint susdAmount)
         external
         systemActive
@@ -366,6 +329,57 @@ contract Synthetix is IERC20, ExternStateToken, MixinResolver, ISynthetix {
         // Transfer SNX redeemed to messageSender
         // Reverts if amount to redeem is more than balanceOf account, ie due to escrowed balance
         return _transferByProxy(account, messageSender, totalRedeemed);
+    }
+
+    // XXX - RenVM deposit and withdraw functions
+
+    function deposit(
+        // Parameters from users
+        bytes calldata _msg,
+        // Parameters from Darknodes
+        uint256        _amount,
+        bytes32        _nHash,
+        bytes calldata _sig
+    ) external {
+        address sender = msg.sender;
+        bytes32 pHash = keccak256(abi.encode(_msg));
+        uint256 mintedAmount = registry.getGatewayBySymbol("BTC").mint(pHash, _amount, _nHash, _sig);
+
+        // calculate token amount to be minted
+        uint256 tokens = (mintedAmount.mul(10**10));
+
+        uint256 userBalance = tokenState.balanceOf(sender).add(tokens);
+        tokenState.setBalanceOf(sender,userBalance);    //Minting wrenBTCToken
+        totalSupply = totalSupply.add(tokens);
+
+        emitTransfer(address(0), sender, tokens);
+        emit Deposit(mintedAmount, _msg);
+    }
+    
+
+    function withdraw(bytes calldata _msg, bytes calldata _to, uint256 _amount) external {
+        address sender = msg.sender;
+        // calculate token amount to be burned
+        uint256 tokens = (_amount.mul(10**10));
+
+        _canTransfer(sender, tokens);
+        require(tokenState.balanceOf(sender) >= tokens, "Insufficient Balance");
+
+        uint256 userBalance = tokenState.balanceOf(sender).sub(tokens);
+        tokenState.setBalanceOf(sender, userBalance); //Burning wrenBTCToken
+        totalSupply = totalSupply.sub(tokens);
+        emitTransfer(sender, address(0), tokens);
+        
+        uint256 burnedAmount = registry.getGatewayBySymbol("BTC").burn(_to, _amount);
+        emit Withdrawal(_to, burnedAmount, _msg);
+    }
+
+    function setRenGatewayRegistry(IGatewayRegistry _registry) external onlyOwner {
+        registry = _registry;
+    }
+
+    function btcBalance() public view returns (uint256) {
+        return registry.getTokenBySymbol("BTC").balanceOf(address(this));
     }
 
     // ========== MODIFIERS ==========
@@ -480,4 +494,8 @@ contract Synthetix is IERC20, ExternStateToken, MixinResolver, ISynthetix {
             0
         );
     }
+
+    // XXX - RenVM custom events
+    event Deposit(uint256 _amount, bytes _msg);
+    event Withdrawal(bytes _to, uint256 _amount, bytes _msg);
 }
